@@ -9,9 +9,20 @@ import (
 	"strings"
 	"time"
 
-	g "github.com/0xRyuk/ipx/internal/global"
 	log "github.com/0xRyuk/ipx/internal/logger"
 	d "github.com/miekg/dns"
+)
+
+// Color constants
+const (
+	BG     = "\033[47m"   //BG
+	B      = "\033[0;90m" //Black
+	G      = "\033[1;32m" //Green
+	R      = "\033[1;31m" //Red
+	Y      = "\033[1;33m" //Yellow
+	W      = "\033[1;97m" //White
+	IC     = "\033[0;96m" //High Intensty Cyan
+	Rst    = "\033[1;m"   //Reset
 )
 
 func HandleExit() {
@@ -25,11 +36,9 @@ func HandleExit() {
 	}()
 }
 
-// Function to parse A Record and return a string slice of IP addresses.
 func ParseARecord(rr []d.RR) []string {
 	seen := make(map[string]bool)
 	var ipAddrs []string
-	// Print the response.
 	for _, r := range rr {
 		switch t := r.(type) {
 		case *d.A:
@@ -44,8 +53,7 @@ func ParseARecord(rr []d.RR) []string {
 	return ipAddrs
 }
 
-func SetResolver(filename string) []string {
-	// Open the file
+func SetResolver(filename, DefaultDNSServer string) []string {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -57,14 +65,12 @@ func SetResolver(filename string) []string {
 		log.Fatal(err)
 	}
 	var resolvers []string
-	// Split the file contents on newline characters and return the resulting slice
 
 	for s.Scan() {
 		r := s.Text()
-		if strings.Contains(r, g.DefaultDNSServer) {
+		if strings.Contains(r, DefaultDNSServer) {
 			continue
 		}
-		// Append each line to the slice.
 		resolvers = append(resolvers, HasSuffix(r, ":53"))
 	}
 	return resolvers
@@ -78,21 +84,17 @@ func HasSuffix(str, suffix string) string {
 }
 
 func FormatStr(str string) string {
-	return fmt.Sprintf("%s%s%s", g.G, str, g.Rst)
+	return fmt.Sprintf("%s%s%s", G, str, Rst)
 }
 
-func SaveToFile(resolved []string) {
-	// Open the file for writing
-	file, err := os.Create(g.SaveOutput)
+func SaveToFile(resolved []string, filename string) {
+	file, err := os.Create(filename)
 	if err != nil {
 		log.Panic(err)
 	}
 	defer file.Close()
 
-	// Write each string in the slice to the file
-	// fmt.Println(g.Resolved)
 	for _, line := range resolved {
-		// fmt.Println("line",line)
 		_, err := file.WriteString(line + "\n")
 		if err != nil {
 			log.Panic(err)
@@ -100,8 +102,9 @@ func SaveToFile(resolved []string) {
 	}
 }
 
-// Print banner randomly
 func Banner() string {
+	banner := []string{fmt.Sprintf("\t%s  ____ __  %s_,  ,\n\t%s ( /( /  )%s( |,' \n\t%s  /  /--' %s  +   \n\t%s_/_ /    %s_,'|__ \n\t\t%sv0.1.0 %sbeta\n%s", IC, R, IC, R, IC, R, IC, R, W, Y, Rst),
+		fmt.Sprintf("%s\t_ ___  %s_  _ \n\t%s| |__]  %s\\/\n\t%s| |    %s_/\\_ \n\t%s\tv0.1.0%s beta%s", IC, R, IC, R, IC, R, W, Y, Rst)} // Fancy banner(s)
 	rand.Seed(time.Now().Unix())
-	return g.Banner[rand.Intn(len(g.Banner))]
+	return banner[rand.Intn(len(banner))]
 }
