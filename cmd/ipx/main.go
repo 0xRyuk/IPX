@@ -118,7 +118,6 @@ func main() {
 	for i := 0; i < opts.Threads; i++ {
 		wg.Add(1)
 		go func() {
-			// ipAddrMap := r.Client(work, &wg, g.Resolvers, g.DefaultTimeout, &g.Count, g.IPv4, g.Verbose)
 			ipAddrMap := resolver.Client(work, &wg, opts.Resolvers, opts.Timeout, &count, opts.IPv4, opts.Verbose)
 			mu.Lock()
 			for ipAddr := range ipAddrMap {
