@@ -103,8 +103,8 @@ func SaveToFile(resolved []string, filename string) {
 }
 
 func Banner() string {
-	banner := []string{fmt.Sprintf("\t%s  ____ __  %s_,  ,\n\t%s ( /( /  )%s( |,' \n\t%s  /  /--' %s  +   \n\t%s_/_ /    %s_,'|__ \n\t\t%sv0.1.0 %sbeta\n%s", IC, R, IC, R, IC, R, IC, R, W, Y, Rst),
-		fmt.Sprintf("%s\t_ ___  %s_  _ \n\t%s| |__]  %s\\/\n\t%s| |    %s_/\\_ \n\t%s\tv0.1.0%s beta%s", IC, R, IC, R, IC, R, W, Y, Rst)} // Fancy banner(s)
+	banner := []string{fmt.Sprintf("\t%s  ____ __  %s_,  ,\n\t%s ( /( /  )%s( |,' \n\t%s  /  /--' %s  +   \n\t%s_/_ /    %s_,'|__ \n\t\t%sv0.2.0 %sbeta\n%s", IC, R, IC, R, IC, R, IC, R, W, Y, Rst),
+		fmt.Sprintf("%s\t_ ___  %s_  _ \n\t%s| |__]  %s\\/\n\t%s| |    %s_/\\_ \n\t%s\tv0.2.0%s beta%s", IC, R, IC, R, IC, R, W, Y, Rst)} // Fancy banner(s)
 	rand.Seed(time.Now().Unix())
 	return banner[rand.Intn(len(banner))]
 }
