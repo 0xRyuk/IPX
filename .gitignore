@@ -25,5 +25,4 @@ vendor/
 
 # Internal packages
 internal/config
-internal/output
 
