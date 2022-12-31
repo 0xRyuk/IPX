@@ -11,9 +11,10 @@ import (
 	"github.com/0xRyuk/ipx/internal/util"
 )
 
-func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout time.Duration, countSuccess *int, ipv4 *regexp.Regexp, verbose bool) map[string]bool {
+func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout time.Duration, countSuccess *int, ipv4 *regexp.Regexp, verbose bool) map[string]map[string]bool {
+
 	errors := make(chan error)
-	ipAddrs := make(map[string]bool)
+	ipAddrs := make(map[string]map[string]bool)
 	defer wg.Done()
 	// create resolver object to perform DNS queries.
 	resolver := NewResolver(
@@ -23,7 +24,7 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 	var localCount int
 
 	for hostname := range work {
-
+		ipAddrs[hostname] = make(map[string]bool)
 		ips, err := net.LookupHost(hostname)
 		go func() {
 			if err != nil {
@@ -34,7 +35,7 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 			if !ipv4.MatchString(ipAddr) {
 				continue
 			}
-			ipAddrs[ipAddr] = true
+			ipAddrs[hostname][ipAddr] = true
 		}
 		domain := util.HasSuffix(hostname, ".")
 		rr, err := resolver.Resolve(domain)
@@ -47,18 +48,24 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 		}()
 		aRecords := util.ParseARecord(rr)
 		for _, ip := range aRecords {
-			ipAddrs[ip] = true
+			ipAddrs[hostname][ip] = true
 		}
-		for ip := range ipAddrs {
+		for hostname, ipAddrs := range ipAddrs {
 			if verbose {
-				log.Info(util.FormatStr(ip))
+				var ips []string //list of ips to print in verbose mode
+				for ip := range ipAddrs {
+					ips = append(ips, ip)
+				}
+				log.Info(util.FormatStr(hostname+" "), ips)
 				go func() {
 					for err := range errors {
 						log.Error(err)
 					}
 				}()
 			} else {
-				fmt.Println(ip)
+				for ip := range ipAddrs {
+					fmt.Println(ip)
+				}
 			}
 		}
 	}

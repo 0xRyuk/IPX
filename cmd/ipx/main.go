@@ -13,20 +13,21 @@ import (
 	"time"
 
 	log "github.com/0xRyuk/ipx/internal/logger"
+	"github.com/0xRyuk/ipx/internal/output"
 	"github.com/0xRyuk/ipx/internal/resolver"
 	"github.com/0xRyuk/ipx/internal/util"
 )
 
 const (
 	DefaultDNSServer = "8.8.8.8:53"
-	DefaultTimeout = 500 * time.Millisecond
+	DefaultTimeout   = 500 * time.Millisecond
 )
-
 
 type Options struct {
 	IPv4          *regexp.Regexp
 	Host          string
 	Filename      string
+	Format        string
 	SaveOutput    string
 	ResolversFile string
 	Resolvers     []string
@@ -37,12 +38,18 @@ type Options struct {
 	Count         int
 }
 
+type Resolved struct {
+	Hostname  string
+	IPAddress []string
+}
+
 var opts Options
 
 func init() {
 	opts.IPv4 = regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})`)
 	flag.StringVar(&opts.Host, "d", "", "Set hostname to resolve (i.e. example.com)")
 	flag.StringVar(&opts.Filename, "f", "", "Read a file containing hostnames to resolve (i.e. hosts.txt)")
+	flag.StringVar(&opts.Format, "format", "", "Output file format")
 	flag.BoolVar(&opts.Plain, "i", false, "Print only IP address (default false)")
 	flag.BoolVar(&opts.Verbose, "v", false, "Turn on verbose mode (default off)")
 	flag.StringVar(&opts.ResolversFile, "r", "", "Resolvers list (i.e. resolvers.txt)")
@@ -59,9 +66,9 @@ func main() {
 	var (
 		count int
 		total int
-		in       io.Reader
-		resolved []string
+		in    io.Reader
 	)
+	resolved := make(map[string][]string)
 
 	if len(opts.Resolvers) < 1 {
 		opts.Resolvers = append(opts.Resolvers, DefaultDNSServer)
@@ -120,9 +127,10 @@ func main() {
 		go func() {
 			ipAddrMap := resolver.Client(work, &wg, opts.Resolvers, opts.Timeout, &count, opts.IPv4, opts.Verbose)
 			mu.Lock()
-			for ipAddr := range ipAddrMap {
-				// The resolved slice is protected by a mutex lock to prevent data race conditions.
-				resolved = append(resolved, ipAddr)
+			for hostname, ipAddrs := range ipAddrMap {
+				for ipAddr := range ipAddrs {
+					resolved[hostname] = append(resolved[hostname], ipAddr)
+				}
 			}
 			mu.Unlock()
 		}()
@@ -139,6 +147,9 @@ func main() {
 	}
 
 	if opts.SaveOutput != "" {
-		util.SaveToFile(resolved, opts.SaveOutput)
+		err := output.SaveToFile(resolved, opts.SaveOutput, opts.Format)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
