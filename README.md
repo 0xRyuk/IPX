@@ -135,9 +135,9 @@ The `-i` flag is a boolean flag that specifies whether to print only the IP addr
 ```bash
 ipx -i -f test_hostnames.txt | nmap -iL -
 ```
-To save the output to a file, you can use the `-o` flag to save IPX's output to a file. This is useful if you want to save the resolved IP addresses for later use, or if you want to redirect the output to another program for further processing.
+To save the output to a file in the desired format, you can use the `--format` flag with a value of _json_, _csv_, or _text_, and the `-o` flag to specify the output file. This is useful if you want to save the resolved IP addresses for later use, or if you want to redirect the output to another program for further processing.
 ```bash
-ipx -f test_hostnames.txt -o resolved_ips.txt
+ipx -f test_hostnames.txt -o resolved_ips --format=json
 ```
 Finally, to use stdin or piped input with IPX, you can specify the `-` flag. This will tell the program to read input from the stdin or the pipe.
 

@@ -8,12 +8,13 @@ import (
 	"time"
 
 	log "github.com/0xRyuk/ipx/internal/logger"
-	u "github.com/0xRyuk/ipx/internal/util"
+	"github.com/0xRyuk/ipx/internal/util"
 )
 
-func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout time.Duration, countSuccess *int, IPv4 *regexp.Regexp, verbose bool) map[string]bool {
+func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout time.Duration, countSuccess *int, ipv4 *regexp.Regexp, verbose bool) map[string]map[string]bool {
+
 	errors := make(chan error)
-	ipAddrs := make(map[string]bool)
+	ipAddrs := make(map[string]map[string]bool)
 	defer wg.Done()
 	// create resolver object to perform DNS queries.
 	resolver := NewResolver(
@@ -23,22 +24,20 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 	var localCount int
 
 	for hostname := range work {
-		// resolve hostename using local resolver.
+		ipAddrs[hostname] = make(map[string]bool)
 		ips, err := net.LookupHost(hostname)
 		go func() {
 			if err != nil {
-				// send error through the error channel.
 				errors <- err
 			}
 		}()
 		for _, ipAddr := range ips {
-			if !IPv4.MatchString(ipAddr) {
+			if !ipv4.MatchString(ipAddr) {
 				continue
 			}
-			ipAddrs[ipAddr] = true
+			ipAddrs[hostname][ipAddr] = true
 		}
-		domain := u.HasSuffix(hostname, ".")
-		// Perform a DNS query for the specified domain.
+		domain := util.HasSuffix(hostname, ".")
 		rr, err := resolver.Resolve(domain)
 		*countSuccess += 1
 		go func() {
@@ -47,20 +46,26 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 				errors <- err
 			}
 		}()
-		aRecords := u.ParseARecord(rr)
+		aRecords := util.ParseARecord(rr)
 		for _, ip := range aRecords {
-			ipAddrs[ip] = true
+			ipAddrs[hostname][ip] = true
 		}
-		for ip := range ipAddrs {
+		for hostname, ipAddrs := range ipAddrs {
 			if verbose {
-				log.Info(u.FormatStr(ip))
+				var ips []string //list of ips to print in verbose mode
+				for ip := range ipAddrs {
+					ips = append(ips, ip)
+				}
+				log.Info(util.FormatStr(hostname+" "), ips)
 				go func() {
 					for err := range errors {
 						log.Error(err)
 					}
 				}()
 			} else {
-				fmt.Println(ip)
+				for ip := range ipAddrs {
+					fmt.Println(ip)
+				}
 			}
 		}
 	}
