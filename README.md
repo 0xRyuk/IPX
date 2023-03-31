@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/0xRyuk/IPX"><img src="https://i.ibb.co/QNhS6k4/ipx-logo.png" alt="ipx-logo" width="250" border="0"></a>
+  <a href="https://github.com/0xRyuk/IPX"><img src="https://i.ibb.co/6yTy8k4/ipx-logo.png" alt="ipx-logo" width="250" border="0"></a>
 </h1>
 
 ***IP eXtreme*** is an open-source DNS resolver tool that efficiently and quickly resolves domain names to their corresponding IP addresses. It leverages advanced resolving techniques and multiple concurrent threads to resolve DNS queries quickly and efficiently, making it well-suited for resolving large lists of domains.
