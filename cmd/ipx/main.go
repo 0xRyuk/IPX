@@ -18,8 +18,8 @@ import (
 	"github.com/0xRyuk/ipx/internal/util"
 )
 
-const (
-	DefaultDNSServer = "8.8.8.8:53"
+var (
+	DefaultDNSServer = []string{"8.8.8.8:53", "1.1.1.1:53"}
 	DefaultTimeout   = 500 * time.Millisecond
 )
 
@@ -70,11 +70,9 @@ func main() {
 	)
 	resolved := make(map[string][]string)
 
-	if len(opts.Resolvers) < 1 {
-		opts.Resolvers = append(opts.Resolvers, DefaultDNSServer)
-		if opts.ResolversFile != "" {
-			opts.Resolvers = append(util.SetResolver(opts.ResolversFile, DefaultDNSServer), opts.Resolvers...)
-		}
+	opts.Resolvers = append(opts.Resolvers, DefaultDNSServer...)
+	if opts.ResolversFile != "" {
+		opts.Resolvers = append(util.SetResolver(opts.ResolversFile, DefaultDNSServer), opts.Resolvers...)
 	}
 
 	start := time.Now()

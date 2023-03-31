@@ -53,7 +53,7 @@ func ParseARecord(rr []d.RR) []string {
 	return ipAddrs
 }
 
-func SetResolver(filename, DefaultDNSServer string) []string {
+func SetResolver(filename string, DefaultDNSServer []string) []string {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -68,8 +68,10 @@ func SetResolver(filename, DefaultDNSServer string) []string {
 
 	for s.Scan() {
 		r := s.Text()
-		if strings.Contains(r, DefaultDNSServer) {
-			continue
+		for _, dds := range DefaultDNSServer {
+			if strings.Contains(r, dds) {
+				continue
+			}
 		}
 		resolvers = append(resolvers, HasSuffix(r, ":53"))
 	}
