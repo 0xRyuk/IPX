@@ -50,10 +50,10 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 		for _, ip := range aRecords {
 			ipAddrs[hostname][ip] = true
 		}
-		for hostname, ipAddrs := range ipAddrs {
+		for hostname, ipAddrMap := range ipAddrs {
 			if verbose {
 				var ips []string //list of ips to print in verbose mode
-				for ip := range ipAddrs {
+				for ip := range ipAddrMap {
 					ips = append(ips, ip)
 				}
 				log.Info(util.FormatStr(hostname+" "), ips)
@@ -63,7 +63,7 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 					}
 				}()
 			} else {
-				for ip := range ipAddrs {
+				for ip := range ipAddrMap {
 					fmt.Println(ip)
 				}
 			}
