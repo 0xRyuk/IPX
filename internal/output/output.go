@@ -4,6 +4,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	log "github.com/0xRyuk/ipx/internal/logger"
+	"github.com/0xRyuk/ipx/internal/util"
 	"io"
 	"os"
 )
@@ -58,5 +60,26 @@ func SaveToFile(data map[string][]string, filename, format string) error {
 		return saveAsCSV(data, file)
 	default:
 		return fmt.Errorf("unsupported format: %s", format)
+	}
+}
+
+func PrintStdout(ipAddrs map[string]map[string]bool, errors []error, verbose bool) {
+	for hostname, ipAddrMap := range ipAddrs {
+		if verbose {
+			var ips []string
+			for ip := range ipAddrMap {
+				ips = append(ips, ip)
+			}
+			log.Info(util.FormatStr(hostname+" "), ips)
+			if len(errors) > 0 {
+				for _, err := range errors {
+					log.Error(err)
+				}
+			}
+		} else {
+			for ip := range ipAddrMap {
+				fmt.Println(ip)
+			}
+		}
 	}
 }

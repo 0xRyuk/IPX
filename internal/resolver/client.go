@@ -1,19 +1,16 @@
 package resolver
 
 import (
-	"fmt"
+	o "github.com/0xRyuk/ipx/internal/output"
+	"github.com/0xRyuk/ipx/internal/util"
 	"net"
 	"regexp"
 	"sync"
 	"time"
-
-	log "github.com/0xRyuk/ipx/internal/logger"
-	"github.com/0xRyuk/ipx/internal/util"
 )
 
 func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout time.Duration, countSuccess *int, ipv4 *regexp.Regexp, verbose bool) map[string]map[string]bool {
 
-	errors := make(chan error)
 	ipAddrs := make(map[string]map[string]bool)
 	defer wg.Done()
 	// create resolver object to perform DNS queries.
@@ -22,15 +19,15 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 		timeout,
 	)
 	var localCount int
+	var errors []error
 
 	for hostname := range work {
 		ipAddrs[hostname] = make(map[string]bool)
 		ips, err := net.LookupHost(hostname)
-		go func() {
-			if err != nil {
-				errors <- err
-			}
-		}()
+		if err != nil {
+			errors = append(errors, err)
+		}
+
 		for _, ipAddr := range ips {
 			if !ipv4.MatchString(ipAddr) {
 				continue
@@ -40,34 +37,15 @@ func Client(work <-chan string, wg *sync.WaitGroup, resolvers []string, timeout 
 		domain := util.HasSuffix(hostname, ".")
 		rr, err := resolver.Resolve(domain)
 		*countSuccess += 1
-		go func() {
-			if err != nil {
-				*countSuccess -= 1
-				errors <- err
-			}
-		}()
+		if err != nil {
+			errors = append(errors, err)
+		}
+
 		aRecords := util.ParseARecord(rr)
 		for _, ip := range aRecords {
 			ipAddrs[hostname][ip] = true
 		}
-		for hostname, ipAddrMap := range ipAddrs {
-			if verbose {
-				var ips []string //list of ips to print in verbose mode
-				for ip := range ipAddrMap {
-					ips = append(ips, ip)
-				}
-				log.Info(util.FormatStr(hostname+" "), ips)
-				go func() {
-					for err := range errors {
-						log.Error(err)
-					}
-				}()
-			} else {
-				for ip := range ipAddrMap {
-					fmt.Println(ip)
-				}
-			}
-		}
+		o.PrintStdout(ipAddrs, errors, verbose)
 	}
 
 	*countSuccess += localCount
